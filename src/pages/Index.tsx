@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import FileUpload from '@/components/FileUpload';
 import ResumePreview from '@/components/ResumePreview';
 import ShareLink from '@/components/ShareLink';
@@ -10,16 +10,26 @@ const Index = () => {
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const { toast } = useToast();
 
+  useEffect(() => {
+    // Cleanup URLs when component unmounts to prevent memory leaks
+    return () => {
+      if (previewUrl && previewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [previewUrl]);
+
   const handleFileSelect = (file: File) => {
+    // Revoke previous URL if it exists
+    if (previewUrl && previewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(previewUrl);
+    }
+
     setUploadedFile(file);
     
-    // Generate a unique identifier for the file
-    const timestamp = new Date().getTime();
-    const fileName = file.name.replace(/\s+/g, '-').toLowerCase();
-    
-    // In a real application, this would be a proper URL from your backend
-    // For now, we'll use a dummy URL with the timestamp to make it unique
-    setPreviewUrl(`https://resume.example.com/${timestamp}-${fileName}`);
+    // Create a blob URL for the file which can be opened directly
+    const fileUrl = URL.createObjectURL(file);
+    setPreviewUrl(fileUrl);
     
     toast({
       title: "Resume uploaded!",
@@ -47,10 +57,17 @@ const Index = () => {
               <div className="w-full max-w-2xl">
                 <h3 className="text-lg font-medium mb-2 text-center">Share your resume</h3>
                 <ShareLink link={previewUrl} />
+                <p className="text-center text-sm text-gray-500 mt-2">
+                  Click the link to open the resume directly
+                </p>
               </div>
               
               <button
                 onClick={() => {
+                  // Clean up old URL
+                  if (previewUrl && previewUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(previewUrl);
+                  }
                   setUploadedFile(null);
                   setPreviewUrl("");
                 }}
