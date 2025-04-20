@@ -3,16 +3,28 @@ import React, { useState } from 'react';
 import FileUpload from '@/components/FileUpload';
 import ResumePreview from '@/components/ResumePreview';
 import ShareLink from '@/components/ShareLink';
+import { useToast } from "@/components/ui/use-toast";
 
 const Index = () => {
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>("");
+  const { toast } = useToast();
 
   const handleFileSelect = (file: File) => {
     setUploadedFile(file);
+    
+    // Generate a unique identifier for the file
+    const timestamp = new Date().getTime();
+    const fileName = file.name.replace(/\s+/g, '-').toLowerCase();
+    
     // In a real application, this would be a proper URL from your backend
-    // For now, we'll use a dummy URL
-    setPreviewUrl(`https://resume.example.com/${file.name}`);
+    // For now, we'll use a dummy URL with the timestamp to make it unique
+    setPreviewUrl(`https://resume.example.com/${timestamp}-${fileName}`);
+    
+    toast({
+      title: "Resume uploaded!",
+      description: "Your resume is ready to share.",
+    });
   };
 
   return (
@@ -31,7 +43,12 @@ const Index = () => {
           ) : (
             <>
               <ResumePreview file={uploadedFile} />
-              <ShareLink link={previewUrl} />
+              
+              <div className="w-full max-w-2xl">
+                <h3 className="text-lg font-medium mb-2 text-center">Share your resume</h3>
+                <ShareLink link={previewUrl} />
+              </div>
+              
               <button
                 onClick={() => {
                   setUploadedFile(null);
